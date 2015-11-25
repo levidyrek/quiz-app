@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Quiz App</string>
+
+    <!-- Start screen strings -->
+    <string name="welcome_text">Welcome to Quiz App!\nPress start to begin.</string>
+    <string name="start_text">Start</string>
+
+    <!-- Quiz strings -->
+    <string name="time_left_text">Time Left:</string>
+    <string name="start_time">01:00</string>
+    <string name="sample_question">How much wood would a wood chuck chuck if a wood chuck could chuck wood?</string>
+    <string name="sample_index">2 of 12</string>
+    <string name="sample_answer_A">7 wood</string>
+    <string name="sample_answer_B">A little</string>
+    <string name="sample_answer_C">A lot</string>
+    <string name="sample_answer_D">None of the above</string>
+    <string name="next">Next</string>
+    <string name="prev">Prev</string>
+
+    <!-- Post-Quiz Strings -->
+    <string name="good_job_text">Good job!</string>
+    <string name="bad_job_text">Better luck next time!</string>
+    <string name="perfect_job_text">Perfection!</string>
+    <string name="try_again">Try again</string>
+
+</resources>
