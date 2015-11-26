@@ -1,13 +1,15 @@
 package com.levipayne.quizapp;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewAnimator;
@@ -27,19 +29,25 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-public class QuizActivity extends AppCompatActivity {
+public class QuizActivity extends Activity {
     private final String TAG = getClass().getSimpleName();
 
     // Views
     private ProgressBar mProgressBar;
     private ProgressDialog mProgressDialog;
     private ViewAnimator mViewAnimator;
+    private RadioButton mRadioA;
+    private RadioButton mRadioB;
+    private RadioButton mRadioC;
+    private RadioButton mRadioD;
 
     private TextView mTimeLeftView;
     private final String QUESTIONS_URL = "https://docs.google.com/document/u/0/export?format=txt&id=1MV7GHAvv4tgj98Hj6B_WZdeeEu7CRf1GwOfISjP4GT0";
     private String mJsonText;
     private boolean mStartWhenDoneLoading;
-    private ArrayList<Question> questions;
+    private ArrayList<Question> mQuestions;
+    private long mTimeElapsed;
+    private CountDownTimer mCountDownTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,14 +58,20 @@ public class QuizActivity extends AppCompatActivity {
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
         mTimeLeftView = (TextView) findViewById(R.id.time_left);
         mViewAnimator = (ViewAnimator) findViewById(R.id.viewAnimator);
+        mRadioA = (RadioButton) findViewById(R.id.answer_A);
+        mRadioB = (RadioButton) findViewById(R.id.answer_B);
+        mRadioC = (RadioButton) findViewById(R.id.answer_C);
+        mRadioD = (RadioButton) findViewById(R.id.answer_D);
 
-        if (mJsonText == null) {
+        setRadioListeners(); // This is necessary to support the alternate landscape layout
+
+        if (savedInstanceState == null) {
             try {
                 showProgressDialog();
                 mJsonText = new URLtoJSONTask().execute(QUESTIONS_URL).get();
-                questions = getQuestionsFromJSON(mJsonText);
-                for (Question question : questions)
-                        Log.d(TAG, "Question: " + question.toString());
+                mQuestions = getQuestionsFromJSON(mJsonText);
+//                for (Question question : mQuestions)
+//                        Log.d(TAG, "Question: " + question.toString());
                 setUpQuestionViews();
                 dismissProgressDialog();
             } catch (InterruptedException e) {
@@ -67,19 +81,79 @@ public class QuizActivity extends AppCompatActivity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            mTimeElapsed = 0;
+        }
+        else {
+            mJsonText = savedInstanceState.getString("mJsonText");
+            mTimeElapsed = savedInstanceState.getLong("mTimeElapsed");
+            try {
+                mQuestions = getQuestionsFromJSON(mJsonText);
+                setUpQuestionViews();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
 
-        startCountdown();
+        startCountdown(mTimeElapsed);
     }
 
-    public void startCountdown() {
+    private void setRadioListeners() {
+        mRadioA.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRadioB.setChecked(false);
+                mRadioC.setChecked(false);
+                mRadioD.setChecked(false);
+            }
+        });
+
+        mRadioB.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRadioA.setChecked(false);
+                mRadioC.setChecked(false);
+                mRadioD.setChecked(false);
+            }
+        });
+
+        mRadioC.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRadioB.setChecked(false);
+                mRadioA.setChecked(false);
+                mRadioD.setChecked(false);
+            }
+        });
+
+        mRadioD.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRadioB.setChecked(false);
+                mRadioC.setChecked(false);
+                mRadioA.setChecked(false);
+            }
+        });
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("mJsonText", mJsonText);
+        outState.putLong("mTimeElapsed", mTimeElapsed);
+
+        mCountDownTimer.cancel();
+    }
+
+    public void startCountdown(final long start) {
         Log.d(TAG, "Countdown started");
-        new CountDownTimer(60000, 100) {
+        mProgressBar.setProgress((int)start);
+        mCountDownTimer = new CountDownTimer(60000 - start, 100) {
 
             public void onTick(long millisUntilFinished) {
-                mProgressBar.setProgress(6000 - ((int) (millisUntilFinished / 10)));
+                mProgressBar.setProgress((int)(6000 - (millisUntilFinished / 10)));
                 String timeLeft = "00:" + String.format("%02d", millisUntilFinished/1000);
                 mTimeLeftView.setText(timeLeft);
+                mTimeElapsed = 60000 - millisUntilFinished;
             }
 
             public void onFinish() {
@@ -107,8 +181,8 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void setUpQuestionViews() {
-        
-        for (Question question : questions) {
+
+        for (Question question : mQuestions) {
 
         }
     }
