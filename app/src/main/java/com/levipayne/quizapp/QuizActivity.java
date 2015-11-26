@@ -117,11 +117,13 @@ public class QuizActivity extends Activity {
                 mNextButton.setVisibility(View.INVISIBLE);
 
             // Get selected answer
-            int selectedAnswer = savedInstanceState.getInt("selectedAnswer");
-            Log.d(TAG, "Selected answer: " + selectedAnswer);
-            if (selectedAnswer != 99) {
-                RadioGroup choices = (RadioGroup)((LinearLayout) mViewAnimator.getCurrentView()).findViewById(R.id.answer_choices);
-                ((RadioButton)choices.getChildAt(selectedAnswer)).setChecked(true);
+            int[] selectedAnswers = savedInstanceState.getIntArray("selectedAnswers");
+            Log.d(TAG, "Selected answer: " + selectedAnswers);
+            for (int i = 0; i < selectedAnswers.length; i++) {
+                if (selectedAnswers[i] != -1) {
+                    RadioGroup choices = (RadioGroup) ((LinearLayout) mViewAnimator.getChildAt(i)).findViewById(R.id.answer_choices);
+                    ((RadioButton) choices.getChildAt(selectedAnswers[i])).setChecked(true);
+                }
             }
         }
 
@@ -198,14 +200,20 @@ public class QuizActivity extends Activity {
         outState.putLong("mTimeElapsed", mTimeElapsed);
         outState.putInt("currentQuestion", mViewAnimator.getDisplayedChild());
         outState.putInt("selectedAnswer", 99);
-        RadioGroup choices = (RadioGroup)((LinearLayout) mViewAnimator.getCurrentView()).findViewById(R.id.answer_choices);
-        for (int i = 0; i < choices.getChildCount(); i++) {
-            boolean checked = ((RadioButton)choices.getChildAt(i)).isChecked();
-            if (checked) {
-                outState.putInt("selectedAnswer", i);
-                break;
+        int[] selectedAnswers = new int[mViewAnimator.getChildCount()];
+        for (int i = 0; i < mViewAnimator.getChildCount(); i++) {
+            selectedAnswers[i] = -1;
+            LinearLayout currentLayout = (LinearLayout) mViewAnimator.getChildAt(i);
+            RadioGroup choices = (RadioGroup)((LinearLayout) currentLayout.findViewById(R.id.answer_choices));
+            for (int j = 0; j < choices.getChildCount(); j++) {
+                boolean checked = ((RadioButton) choices.getChildAt(i)).isChecked();
+                if (checked) {
+                    selectedAnswers[i] = j;
+                    break;
+                }
             }
         }
+        outState.putIntArray("selectedAnswers", selectedAnswers);
 
         mCountDownTimer.cancel();
     }
