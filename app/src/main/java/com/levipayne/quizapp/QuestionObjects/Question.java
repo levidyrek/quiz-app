@@ -8,7 +8,20 @@ public class Question {
     String answer;
     Answer[] multiple_choice;
 
+    public Answer[] getMultiple_choice() {
+        return multiple_choice;
+    }
+
+    public String getAnswer() {
+        return answer;
+    }
+
+    public String getQuestion() {
+        return question;
+    }
+
     @Override
+
     public String toString() {
         return "{ question: " + question + ", answer: " + answer + "}";
     }

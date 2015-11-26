@@ -7,14 +7,22 @@ import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewAnimator;
 
 import com.google.gson.Gson;
+import com.levipayne.quizapp.QuestionObjects.Answer;
 import com.levipayne.quizapp.QuestionObjects.Question;
 
 import org.json.JSONArray;
@@ -33,6 +41,7 @@ public class QuizActivity extends Activity {
     private final String TAG = getClass().getSimpleName();
 
     // Views
+    private RelativeLayout mRootView;
     private ProgressBar mProgressBar;
     private ProgressDialog mProgressDialog;
     private ViewAnimator mViewAnimator;
@@ -48,6 +57,10 @@ public class QuizActivity extends Activity {
     private ArrayList<Question> mQuestions;
     private long mTimeElapsed;
     private CountDownTimer mCountDownTimer;
+    private LinearLayout mQuestionContainer;
+    private Button mNextButton;
+    private Button mPrevButton;
+    private boolean mCountDownPaused;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,24 +68,25 @@ public class QuizActivity extends Activity {
         setContentView(R.layout.activity_quiz);
 
         // Instantiate View Objects
+        mRootView = (RelativeLayout) findViewById(R.id.main_container);
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
         mTimeLeftView = (TextView) findViewById(R.id.time_left);
+        mQuestionContainer = (LinearLayout) findViewById(R.id.question_container);
         mViewAnimator = (ViewAnimator) findViewById(R.id.viewAnimator);
-        mRadioA = (RadioButton) findViewById(R.id.answer_A);
-        mRadioB = (RadioButton) findViewById(R.id.answer_B);
-        mRadioC = (RadioButton) findViewById(R.id.answer_C);
-        mRadioD = (RadioButton) findViewById(R.id.answer_D);
+        mNextButton = (Button) findViewById(R.id.next_button);
+        mPrevButton = (Button) findViewById(R.id.prev_button);
 
-        setRadioListeners(); // This is necessary to support the alternate landscape layout
+//        setRadioListeners(); // This is necessary to support the alternate landscape layout
+        setNavButtonListeners();
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState == null) { // First time onCreate has been executed
             try {
+                // Load questions from url and convert them into Question objects
                 showProgressDialog();
                 mJsonText = new URLtoJSONTask().execute(QUESTIONS_URL).get();
                 mQuestions = getQuestionsFromJSON(mJsonText);
-//                for (Question question : mQuestions)
-//                        Log.d(TAG, "Question: " + question.toString());
-                setUpQuestionViews();
+                setUpQuestionViews(); // Set up ViewAnimator with question views
+                mPrevButton.setVisibility(View.INVISIBLE);
                 dismissProgressDialog();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -81,9 +95,10 @@ public class QuizActivity extends Activity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
             mTimeElapsed = 0;
         }
-        else {
+        else { // Restore data from savedInstanceState
             mJsonText = savedInstanceState.getString("mJsonText");
             mTimeElapsed = savedInstanceState.getLong("mTimeElapsed");
             try {
@@ -92,9 +107,50 @@ public class QuizActivity extends Activity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
+            // Set animator to correct question and correct visibility for prev/next buttons
+            int currentQuestion = savedInstanceState.getInt("currentQuestion");
+            mViewAnimator.setDisplayedChild(currentQuestion);
+            if (currentQuestion == 0)
+                mPrevButton.setVisibility(View.INVISIBLE);
+            else if (currentQuestion == mViewAnimator.getChildCount()-1)
+                mNextButton.setVisibility(View.INVISIBLE);
+
+            // Get selected answer
+            int selectedAnswer = savedInstanceState.getInt("selectedAnswer");
+            Log.d(TAG, "Selected answer: " + selectedAnswer);
+            if (selectedAnswer != 99) {
+                RadioGroup choices = (RadioGroup)((LinearLayout) mViewAnimator.getCurrentView()).findViewById(R.id.answer_choices);
+                ((RadioButton)choices.getChildAt(selectedAnswer)).setChecked(true);
+            }
         }
 
+        mCountDownPaused = false;
         startCountdown(mTimeElapsed);
+    }
+
+    private void setNavButtonListeners() {
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mViewAnimator.showNext();
+                if (mViewAnimator.getDisplayedChild() == mViewAnimator.getChildCount()-1)
+                    mNextButton.setVisibility(View.INVISIBLE);
+                else if (mViewAnimator.getDisplayedChild() > 0)
+                    mPrevButton.setVisibility(View.VISIBLE);
+            }
+        });
+
+        mPrevButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mViewAnimator.showPrevious();
+                if (mViewAnimator.getDisplayedChild() == 0)
+                    mPrevButton.setVisibility(View.INVISIBLE);
+                else if (mViewAnimator.getDisplayedChild() < mViewAnimator.getChildCount()-1)
+                    mNextButton.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void setRadioListeners() {
@@ -140,13 +196,23 @@ public class QuizActivity extends Activity {
         super.onSaveInstanceState(outState);
         outState.putString("mJsonText", mJsonText);
         outState.putLong("mTimeElapsed", mTimeElapsed);
+        outState.putInt("currentQuestion", mViewAnimator.getDisplayedChild());
+        outState.putInt("selectedAnswer", 99);
+        RadioGroup choices = (RadioGroup)((LinearLayout) mViewAnimator.getCurrentView()).findViewById(R.id.answer_choices);
+        for (int i = 0; i < choices.getChildCount(); i++) {
+            boolean checked = ((RadioButton)choices.getChildAt(i)).isChecked();
+            if (checked) {
+                outState.putInt("selectedAnswer", i);
+                break;
+            }
+        }
 
         mCountDownTimer.cancel();
     }
 
     public void startCountdown(final long start) {
         Log.d(TAG, "Countdown started");
-        mProgressBar.setProgress((int)start);
+        mProgressBar.setProgress((int) start);
         mCountDownTimer = new CountDownTimer(60000 - start, 100) {
 
             public void onTick(long millisUntilFinished) {
@@ -181,10 +247,63 @@ public class QuizActivity extends Activity {
     }
 
     private void setUpQuestionViews() {
+        mQuestionContainer.setVisibility(View.GONE);
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) mQuestionContainer.getLayoutParams();
+        for (int i = 0; i < mQuestions.size(); i++) {
+            Question question = mQuestions.get(i);
+            LayoutInflater inflater = LayoutInflater.from(this);
+            LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.question_container_layout, null, true);
 
-        for (Question question : mQuestions) {
+            // Set views to data from questions
+            ((TextView)layout.findViewById(R.id.question)).setText(question.getQuestion());
+            ((TextView)layout.findViewById(R.id.question_index)).setText((i+1) + " of " + mQuestions.size());
 
+            RadioButton[] buttons = { (RadioButton)layout.findViewById(R.id.answer_A),
+                    (RadioButton)layout.findViewById(R.id.answer_B),
+                    (RadioButton)layout.findViewById(R.id.answer_C),
+                    (RadioButton)layout.findViewById(R.id.answer_D),
+                    (RadioButton)layout.findViewById(R.id.answer_E),
+                    (RadioButton)layout.findViewById(R.id.answer_F)};
+            Answer[] answers = question.getMultiple_choice();
+            for (int j = 0; j < answers.length; j++) {
+                Answer answer = answers[j];
+                String id = answer.getId().toLowerCase();
+                switch (id) {
+                    case "a":
+                        buttons[0].setText(answer.getAnswer());
+                        break;
+                    case "b":
+                        buttons[1].setText(answer.getAnswer());
+                        break;
+                    case "c":
+                        buttons[2].setText(answer.getAnswer());
+                        break;
+                    case "d":
+                        buttons[3].setText(answer.getAnswer());
+                        break;
+                    case "e":
+                        buttons[4].setText(answer.getAnswer());
+                        break;
+                    case "f":
+                        buttons[5].setText(answer.getAnswer());
+                        break;
+                    default:
+                        // TODO: Make it so that more choices could appear
+                }
+            }
+
+            // TODO: Make unused choices become invisible
+            for (int j = buttons.length-1; j > answers.length-1; j--) {
+                buttons[j].setVisibility(View.GONE);
+            }
+
+            mViewAnimator.addView(layout, i, layoutParams);
         }
+
+//        Animation leftAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_out_left);
+//        Animation rightAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_in_right);
+//        mViewAnimator.setInAnimation(rightAnimation);
+//        mViewAnimator.setOutAnimation(leftAnimation);
     }
 
     public ArrayList<Question> getQuestionsFromJSON(String jsonText) throws JSONException {
@@ -198,6 +317,24 @@ public class QuizActivity extends Activity {
         }
         return questions;
     }
+
+    // <------------- Lifecycle overrides --------------->
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mCountDownTimer.cancel();
+        mCountDownPaused = true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mCountDownPaused)
+            startCountdown(mTimeElapsed);
+    }
+
+    // <--------------------------------------------------->
 
     private class URLtoJSONTask extends AsyncTask<String, Integer, String> {
         protected String doInBackground(String... urls) {
