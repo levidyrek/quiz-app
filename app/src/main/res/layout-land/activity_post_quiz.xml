@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context="com.levipayne.quizapp.PostQuizActivity">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="50dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="@string/good_job_text"
+                android:id="@+id/response_text"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:textSize="@dimen/post_quiz_header_text"
+                android:layout_marginBottom="50dp"
+                android:textAlignment="center"
+                android:layout_gravity="center_horizontal" />
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/response_text"
+                android:layout_centerHorizontal="true"
+                android:id="@+id/relativeLayout"
+                android:layout_gravity="center_horizontal">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:id="@+id/correct_container">
+
+                    <ImageView
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:id="@+id/imageView"
+                        android:background="@drawable/sign_check"
+                        android:layout_marginRight="5dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:text="@string/sample_num_correct"
+                        android:id="@+id/num_correct"
+                        android:layout_gravity="center_vertical"
+                        android:textColor="@color/material_grey_900" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_below="@+id/correct_container"
+                    android:layout_alignParentLeft="false"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignLeft="@+id/correct_container"
+                    android:id="@+id/incorrect_container">
+
+                    <ImageView
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:id="@+id/imageView2"
+                        android:background="@drawable/sign_x"
+                        android:layout_below="@+id/correct_container"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentStart="true"
+                        android:layout_marginRight="5dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceMedium"
+                        android:text="@string/sample_num_incorrect"
+                        android:id="@+id/num_incorrect"
+                        android:textColor="@color/material_grey_900"
+                        android:layout_alignBottom="@+id/imageView2"
+                        android:layout_toRightOf="@+id/imageView2"
+                        android:layout_toEndOf="@+id/imageView2"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+
+            </RelativeLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="@string/sample_percentage"
+                android:id="@+id/percentage"
+                android:textSize="@dimen/post_quiz_percentage"
+                android:layout_above="@+id/button"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="50dp"
+                android:layout_gravity="center_horizontal" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/try_again"
+                android:id="@+id/button"
+                android:onClick="tryQuizAgain"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_gravity="center_horizontal" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

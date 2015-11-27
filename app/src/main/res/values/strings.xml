@@ -16,15 +16,15 @@
     <string name="sample_answer_D">None of the above</string>
     <string name="next">Next</string>
     <string name="prev">Prev</string>
+    <string name="finish">Finish</string>
 
     <!-- Post-Quiz Strings -->
     <string name="good_job_text">Good job!</string>
     <string name="bad_job_text">Better luck next time!</string>
     <string name="perfect_job_text">Perfection!</string>
     <string name="try_again">Try again</string>
-
-    <string name="title_activity_fullscreen">FullscreenActivity</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="sample_num_correct">You got 8 right</string>
+    <string name="sample_num_incorrect">You got 4 wrong</string>
+    <string name="sample_percentage">67%</string>
 
 </resources>

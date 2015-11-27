@@ -9,8 +9,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -49,6 +47,7 @@ public class QuizActivity extends Activity {
     private RadioButton mRadioB;
     private RadioButton mRadioC;
     private RadioButton mRadioD;
+    private Button mFinishButton;
 
     private TextView mTimeLeftView;
     private final String QUESTIONS_URL = "https://docs.google.com/document/u/0/export?format=txt&id=1MV7GHAvv4tgj98Hj6B_WZdeeEu7CRf1GwOfISjP4GT0";
@@ -61,6 +60,10 @@ public class QuizActivity extends Activity {
     private Button mNextButton;
     private Button mPrevButton;
     private boolean mCountDownPaused;
+    private String[] mResponses;
+    private int[] mSelectedAnswerIds;
+    private String[] mAnswers;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +78,7 @@ public class QuizActivity extends Activity {
         mViewAnimator = (ViewAnimator) findViewById(R.id.viewAnimator);
         mNextButton = (Button) findViewById(R.id.next_button);
         mPrevButton = (Button) findViewById(R.id.prev_button);
+        mFinishButton = (Button) findViewById(R.id.finish_button);
 
 //        setRadioListeners(); // This is necessary to support the alternate landscape layout
         setNavButtonListeners();
@@ -85,7 +89,7 @@ public class QuizActivity extends Activity {
                 showProgressDialog();
                 mJsonText = new URLtoJSONTask().execute(QUESTIONS_URL).get();
                 mQuestions = getQuestionsFromJSON(mJsonText);
-                setUpQuestionViews(); // Set up ViewAnimator with question views
+                setUpQuestionViews(null); // Set up ViewAnimator with question views
                 mPrevButton.setVisibility(View.INVISIBLE);
                 dismissProgressDialog();
             } catch (InterruptedException e) {
@@ -97,13 +101,27 @@ public class QuizActivity extends Activity {
             }
 
             mTimeElapsed = 0;
+
+            // Prepare to track answers
+            mResponses = new String[mViewAnimator.getChildCount()];
+            mSelectedAnswerIds = new int[mViewAnimator.getChildCount()];
+            for (int i = 0; i < mViewAnimator.getChildCount(); i++) { // Set default values
+                mResponses[i] = "";
+                mSelectedAnswerIds[i] = -1;
+            }
         }
         else { // Restore data from savedInstanceState
+            int[] selectedAnswers = savedInstanceState.getIntArray("mSelectedAnswerIds");
+
+            // Prepare to track answers
+            mResponses = savedInstanceState.getStringArray("mResponses");
+            mSelectedAnswerIds = savedInstanceState.getIntArray("mSelectedAnswerIds");
+
             mJsonText = savedInstanceState.getString("mJsonText");
             mTimeElapsed = savedInstanceState.getLong("mTimeElapsed");
             try {
                 mQuestions = getQuestionsFromJSON(mJsonText);
-                setUpQuestionViews();
+//                setUpQuestionViews(selectedAnswers);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -115,18 +133,12 @@ public class QuizActivity extends Activity {
                 mPrevButton.setVisibility(View.INVISIBLE);
             else if (currentQuestion == mViewAnimator.getChildCount()-1)
                 mNextButton.setVisibility(View.INVISIBLE);
-
-            // Get selected answer
-            int[] selectedAnswers = savedInstanceState.getIntArray("selectedAnswers");
-            Log.d(TAG, "Selected answer: " + selectedAnswers);
-            for (int i = 0; i < selectedAnswers.length; i++) {
-                if (selectedAnswers[i] != -1) {
-                    RadioGroup choices = (RadioGroup) ((LinearLayout) mViewAnimator.getChildAt(i)).findViewById(R.id.answer_choices);
-                    ((RadioButton) choices.getChildAt(selectedAnswers[i])).setChecked(true);
-                }
-            }
         }
 
+        mAnswers = new String[mQuestions.size()];
+        for (int i = 0; i < mAnswers.length; i++) {
+            mAnswers[i] = mQuestions.get(i).getAnswer();
+        }
         mCountDownPaused = false;
         startCountdown(mTimeElapsed);
     }
@@ -135,24 +147,43 @@ public class QuizActivity extends Activity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mViewAnimator.showNext();
-                if (mViewAnimator.getDisplayedChild() == mViewAnimator.getChildCount()-1)
-                    mNextButton.setVisibility(View.INVISIBLE);
-                else if (mViewAnimator.getDisplayedChild() > 0)
-                    mPrevButton.setVisibility(View.VISIBLE);
+                showNextQuestion();
             }
         });
 
         mPrevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mViewAnimator.showPrevious();
-                if (mViewAnimator.getDisplayedChild() == 0)
-                    mPrevButton.setVisibility(View.INVISIBLE);
-                else if (mViewAnimator.getDisplayedChild() < mViewAnimator.getChildCount()-1)
-                    mNextButton.setVisibility(View.VISIBLE);
+                showPrevQuestion();
             }
         });
+
+        mFinishButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                endQuiz();
+            }
+        });
+    }
+
+    public void showNextQuestion() {
+        mViewAnimator.showNext();
+        if (mViewAnimator.getDisplayedChild() == mViewAnimator.getChildCount()-1) {
+            mNextButton.setVisibility(View.INVISIBLE);
+            mFinishButton.setVisibility(View.VISIBLE);
+        }
+        else if (mViewAnimator.getDisplayedChild() > 0)
+            mPrevButton.setVisibility(View.VISIBLE);
+    }
+
+    public void showPrevQuestion() {
+        mViewAnimator.showPrevious();
+        if (mViewAnimator.getDisplayedChild() == 0)
+            mPrevButton.setVisibility(View.INVISIBLE);
+        else if (mViewAnimator.getDisplayedChild() < mViewAnimator.getChildCount()-1) {
+            mNextButton.setVisibility(View.VISIBLE);
+            mFinishButton.setVisibility(View.GONE);
+        }
     }
 
     private void setRadioListeners() {
@@ -199,21 +230,8 @@ public class QuizActivity extends Activity {
         outState.putString("mJsonText", mJsonText);
         outState.putLong("mTimeElapsed", mTimeElapsed);
         outState.putInt("currentQuestion", mViewAnimator.getDisplayedChild());
-        outState.putInt("selectedAnswer", 99);
-        int[] selectedAnswers = new int[mViewAnimator.getChildCount()];
-        for (int i = 0; i < mViewAnimator.getChildCount(); i++) {
-            selectedAnswers[i] = -1;
-            LinearLayout currentLayout = (LinearLayout) mViewAnimator.getChildAt(i);
-            RadioGroup choices = (RadioGroup)((LinearLayout) currentLayout.findViewById(R.id.answer_choices));
-            for (int j = 0; j < choices.getChildCount(); j++) {
-                boolean checked = ((RadioButton) choices.getChildAt(i)).isChecked();
-                if (checked) {
-                    selectedAnswers[i] = j;
-                    break;
-                }
-            }
-        }
-        outState.putIntArray("selectedAnswers", selectedAnswers);
+        outState.putStringArray("mResponses", mResponses);
+        outState.putIntArray("mSelectedAnswerIds", mSelectedAnswerIds);
 
         mCountDownTimer.cancel();
     }
@@ -238,7 +256,10 @@ public class QuizActivity extends Activity {
     }
 
     public void endQuiz() {
+        Log.d(TAG, mResponses[0] + "," + mResponses[1] + "," + mResponses[2] + "," + mResponses[3]+ "," + mResponses[4]+ "," + mResponses[5]);
         Intent intent = new Intent(this, PostQuizActivity.class);
+        intent.putExtra("responses", mResponses);
+        intent.putExtra("answers", mAnswers);
         startActivity(intent);
         finish();
     }
@@ -254,13 +275,13 @@ public class QuizActivity extends Activity {
         mProgressDialog.dismiss();
     }
 
-    private void setUpQuestionViews() {
+    private void setUpQuestionViews(int[] selectedQuestions) {
         mQuestionContainer.setVisibility(View.GONE);
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) mQuestionContainer.getLayoutParams();
         for (int i = 0; i < mQuestions.size(); i++) {
             Question question = mQuestions.get(i);
             LayoutInflater inflater = LayoutInflater.from(this);
-            LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.question_container_layout, null, true);
+            LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.question_container_layout, null, false);
 
             // Set views to data from questions
             ((TextView)layout.findViewById(R.id.question)).setText(question.getQuestion());
@@ -279,28 +300,52 @@ public class QuizActivity extends Activity {
                 switch (id) {
                     case "a":
                         buttons[0].setText(answer.getAnswer());
+                        buttons[0].setTag("a");
                         break;
                     case "b":
                         buttons[1].setText(answer.getAnswer());
+                        buttons[1].setTag("b");
                         break;
                     case "c":
                         buttons[2].setText(answer.getAnswer());
+                        buttons[2].setTag("c");
                         break;
                     case "d":
                         buttons[3].setText(answer.getAnswer());
+                        buttons[3].setTag("d");
                         break;
                     case "e":
                         buttons[4].setText(answer.getAnswer());
+                        buttons[4].setTag("e");
                         break;
                     case "f":
                         buttons[5].setText(answer.getAnswer());
+                        buttons[5].setTag("f");
                         break;
                     default:
                         // TODO: Make it so that more choices could appear
                 }
             }
 
-            // TODO: Make unused choices become invisible
+            // Mark answers as selected if there was an orientation change, etc.
+//            if (selectedQuestions != null) {
+//                if (selectedQuestions[i] != -1)
+//                    buttons[selectedQuestions[i]].setChecked(true);
+//            }
+            RadioGroup rg = (RadioGroup) layout.findViewById(R.id.answer_choices);
+            rg.setTag(i); // Set tag to question index for later use
+            rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() { // Keep up with what answer is selected
+                @Override
+                public void onCheckedChanged(RadioGroup group, int checkedId) {
+                    int index = (int)group.getTag();
+                    mResponses[index] = (String)((RadioButton)group.findViewById(group.getCheckedRadioButtonId())).getTag();
+                    mSelectedAnswerIds[index] = group.getCheckedRadioButtonId();
+                }
+            });
+            if (selectedQuestions != null && selectedQuestions[i] != -1)
+                rg.check(selectedQuestions[i]);
+
+            // Make unused choices become invisible
             for (int j = buttons.length-1; j > answers.length-1; j--) {
                 buttons[j].setVisibility(View.GONE);
             }
@@ -340,6 +385,13 @@ public class QuizActivity extends Activity {
         super.onResume();
         if (mCountDownPaused)
             startCountdown(mTimeElapsed);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        RadioButton answerA = (RadioButton) findViewById(R.id.answer_A);
+        answerA.setChecked(true);
     }
 
     // <--------------------------------------------------->

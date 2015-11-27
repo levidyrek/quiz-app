@@ -1,5 +1,6 @@
 package com.levipayne.quizapp;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -19,7 +20,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private final String TAG = getClass().getSimpleName();
 
     @Override

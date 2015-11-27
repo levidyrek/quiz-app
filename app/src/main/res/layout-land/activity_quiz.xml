@@ -23,7 +23,8 @@
             android:id="@+id/time_left_descr"
             android:textColor="#000000"
             android:layout_gravity="center_horizontal"
-            android:textSize="15sp" />
+            android:textSize="15sp"
+            android:visibility="gone" />
 
         <ProgressBar
             android:layout_width="match_parent"
@@ -44,7 +45,8 @@
             android:text="@string/start_time"
             android:id="@+id/time_left"
             android:layout_gravity="center_horizontal"
-            android:textColor="@color/material_grey_900" />
+            android:textColor="@color/material_grey_900"
+            android:visibility="gone" />
     </LinearLayout>
 
     <include layout="@layout/question_container_land_layout"/>
@@ -79,5 +81,15 @@
         android:layout_above="@+id/prev_button">
 
     </ViewAnimator>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/finish"
+        android:id="@+id/finish_button"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:visibility="gone" />
 
 </RelativeLayout>

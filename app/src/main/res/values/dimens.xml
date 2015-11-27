@@ -2,5 +2,9 @@
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
-    <dimen name="post_quiz_header_text">25sp</dimen>
+
+    <!-- Post Quiz -->
+    <dimen name="post_quiz_header_text">40sp</dimen>
+    <dimen name="post_quiz_results_text">30sp</dimen>
+    <dimen name="post_quiz_percentage">100sp</dimen>
 </resources>
