@@ -16,7 +16,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:textSize="@dimen/post_quiz_header_text"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="30dp"
         android:textAlignment="center" />
 
     <RelativeLayout
@@ -24,7 +24,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/response_text"
         android:layout_centerHorizontal="true"
-        android:id="@+id/relativeLayout">
+        android:id="@+id/right_wrong_container"
+        android:layout_marginBottom="30dp">
 
         <LinearLayout
             android:orientation="horizontal"
@@ -86,16 +87,49 @@
 
     </RelativeLayout>
 
-    <TextView
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/sample_percentage"
-        android:id="@+id/percentage"
-        android:textSize="@dimen/post_quiz_percentage"
-        android:layout_above="@+id/button"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="50dp" />
+        android:id="@+id/number_results_container"
+        android:layout_below="@+id/right_wrong_container">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/new_high_score"
+            android:id="@+id/high_score"
+            android:layout_above="@+id/percentage"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:textColor="#ffaa00" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="@string/sample_percentage"
+            android:id="@+id/percentage"
+            android:textSize="@dimen/post_quiz_percentage"
+            android:layout_above="@+id/button"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/sample_time_taken"
+            android:id="@+id/time_text"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/percentage"
+            android:layout_marginBottom="50dp"
+            android:textColor="@color/material_grey_900"
+            android:layout_gravity="center_horizontal" />
+
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
@@ -104,6 +138,7 @@
         android:id="@+id/button"
         android:onClick="tryQuizAgain"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="60dp" />
 
 </RelativeLayout>

@@ -3,11 +3,15 @@ package com.levipayne.quizapp;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Bundle;
+import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -20,6 +24,8 @@ import android.widget.Toast;
 import android.widget.ViewAnimator;
 
 import com.google.gson.Gson;
+import com.levipayne.quizapp.CustomObjects.CustomRadioGroup;
+import com.levipayne.quizapp.CustomObjects.LetterPicker;
 import com.levipayne.quizapp.QuestionObjects.Answer;
 import com.levipayne.quizapp.QuestionObjects.Question;
 
@@ -35,9 +41,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-public class QuizActivity extends Activity {
+public class QuizActivity extends Activity implements GestureDetector.OnGestureListener {
     private final String TAG = getClass().getSimpleName();
-
     // Views
     private RelativeLayout mRootView;
     private ProgressBar mProgressBar;
@@ -63,6 +68,8 @@ public class QuizActivity extends Activity {
     private String[] mResponses;
     private int[] mSelectedAnswerIds;
     private String[] mAnswers;
+    private int mOrientation;
+    private GestureDetectorCompat mDetector;
 
 
     @Override
@@ -83,13 +90,24 @@ public class QuizActivity extends Activity {
 //        setRadioListeners(); // This is necessary to support the alternate landscape layout
         setNavButtonListeners();
 
+        mOrientation = getResources().getConfiguration().orientation;
+
         if (savedInstanceState == null) { // First time onCreate has been executed
             try {
                 // Load questions from url and convert them into Question objects
                 showProgressDialog();
                 mJsonText = new URLtoJSONTask().execute(QUESTIONS_URL).get();
                 mQuestions = getQuestionsFromJSON(mJsonText);
-                setUpQuestionViews(null); // Set up ViewAnimator with question views
+
+                // Prepare to track answers
+                mResponses = new String[mQuestions.size()];
+                mSelectedAnswerIds = new int[mQuestions.size()];
+                for (int i = 0; i < mResponses.length; i++) { // Set default values
+                    mResponses[i] = "";
+                    mSelectedAnswerIds[i] = -1;
+                }
+
+                setUpQuestionViews(null, mOrientation); // Set up ViewAnimator with question views
                 mPrevButton.setVisibility(View.INVISIBLE);
                 dismissProgressDialog();
             } catch (InterruptedException e) {
@@ -101,27 +119,18 @@ public class QuizActivity extends Activity {
             }
 
             mTimeElapsed = 0;
-
-            // Prepare to track answers
-            mResponses = new String[mViewAnimator.getChildCount()];
-            mSelectedAnswerIds = new int[mViewAnimator.getChildCount()];
-            for (int i = 0; i < mViewAnimator.getChildCount(); i++) { // Set default values
-                mResponses[i] = "";
-                mSelectedAnswerIds[i] = -1;
-            }
         }
         else { // Restore data from savedInstanceState
-            int[] selectedAnswers = savedInstanceState.getIntArray("mSelectedAnswerIds");
-
             // Prepare to track answers
             mResponses = savedInstanceState.getStringArray("mResponses");
             mSelectedAnswerIds = savedInstanceState.getIntArray("mSelectedAnswerIds");
+            Log.d(TAG, "Selected answers: {" + mSelectedAnswerIds[0] + "," + mSelectedAnswerIds[1] + "}");
 
             mJsonText = savedInstanceState.getString("mJsonText");
             mTimeElapsed = savedInstanceState.getLong("mTimeElapsed");
             try {
                 mQuestions = getQuestionsFromJSON(mJsonText);
-//                setUpQuestionViews(selectedAnswers);
+                setUpQuestionViews(mSelectedAnswerIds, mOrientation);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -131,8 +140,11 @@ public class QuizActivity extends Activity {
             mViewAnimator.setDisplayedChild(currentQuestion);
             if (currentQuestion == 0)
                 mPrevButton.setVisibility(View.INVISIBLE);
-            else if (currentQuestion == mViewAnimator.getChildCount()-1)
+            else if (currentQuestion == mViewAnimator.getChildCount()-1) {
                 mNextButton.setVisibility(View.INVISIBLE);
+                mFinishButton.setVisibility(View.VISIBLE);
+            }
+//            checkForPreviousSelection();
         }
 
         mAnswers = new String[mQuestions.size()];
@@ -141,6 +153,8 @@ public class QuizActivity extends Activity {
         }
         mCountDownPaused = false;
         startCountdown(mTimeElapsed);
+
+        mDetector = new GestureDetectorCompat(this,this);
     }
 
     private void setNavButtonListeners() {
@@ -167,6 +181,10 @@ public class QuizActivity extends Activity {
     }
 
     public void showNextQuestion() {
+        // Set animation
+        mViewAnimator.setInAnimation(this, R.anim.slide_in_right);
+        mViewAnimator.setOutAnimation(this, R.anim.slide_out_left);
+
         mViewAnimator.showNext();
         if (mViewAnimator.getDisplayedChild() == mViewAnimator.getChildCount()-1) {
             mNextButton.setVisibility(View.INVISIBLE);
@@ -174,9 +192,14 @@ public class QuizActivity extends Activity {
         }
         else if (mViewAnimator.getDisplayedChild() > 0)
             mPrevButton.setVisibility(View.VISIBLE);
+
     }
 
     public void showPrevQuestion() {
+        // Set animation
+        mViewAnimator.setInAnimation(this, R.anim.slide_in_left);
+        mViewAnimator.setOutAnimation(this, R.anim.slide_out_right);
+
         mViewAnimator.showPrevious();
         if (mViewAnimator.getDisplayedChild() == 0)
             mPrevButton.setVisibility(View.INVISIBLE);
@@ -184,44 +207,7 @@ public class QuizActivity extends Activity {
             mNextButton.setVisibility(View.VISIBLE);
             mFinishButton.setVisibility(View.GONE);
         }
-    }
 
-    private void setRadioListeners() {
-        mRadioA.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRadioB.setChecked(false);
-                mRadioC.setChecked(false);
-                mRadioD.setChecked(false);
-            }
-        });
-
-        mRadioB.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRadioA.setChecked(false);
-                mRadioC.setChecked(false);
-                mRadioD.setChecked(false);
-            }
-        });
-
-        mRadioC.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRadioB.setChecked(false);
-                mRadioA.setChecked(false);
-                mRadioD.setChecked(false);
-            }
-        });
-
-        mRadioD.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mRadioB.setChecked(false);
-                mRadioC.setChecked(false);
-                mRadioA.setChecked(false);
-            }
-        });
     }
 
     @Override
@@ -256,10 +242,11 @@ public class QuizActivity extends Activity {
     }
 
     public void endQuiz() {
-        Log.d(TAG, mResponses[0] + "," + mResponses[1] + "," + mResponses[2] + "," + mResponses[3]+ "," + mResponses[4]+ "," + mResponses[5]);
+        Log.d(TAG, mResponses[0] + "," + mResponses[1] + "," + mResponses[2] + "," + mResponses[3] + "," + mResponses[4] + "," + mResponses[5]);
         Intent intent = new Intent(this, PostQuizActivity.class);
         intent.putExtra("responses", mResponses);
         intent.putExtra("answers", mAnswers);
+        intent.putExtra("time", mTimeElapsed);
         startActivity(intent);
         finish();
     }
@@ -275,88 +262,92 @@ public class QuizActivity extends Activity {
         mProgressDialog.dismiss();
     }
 
-    private void setUpQuestionViews(int[] selectedQuestions) {
+    private void setUpQuestionViews(int[] selectedQuestions, int orientation) {
+        int baseId = 800000;
+
+        int layoutId;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+            layoutId = R.layout.question_container_land_layout;
+        else
+            layoutId = R.layout.question_container_layout;
+
         mQuestionContainer.setVisibility(View.GONE);
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) mQuestionContainer.getLayoutParams();
         for (int i = 0; i < mQuestions.size(); i++) {
             Question question = mQuestions.get(i);
             LayoutInflater inflater = LayoutInflater.from(this);
-            LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.question_container_layout, null, false);
+            LinearLayout layout = (LinearLayout) inflater.inflate(layoutId, null, false);
+            CustomRadioGroup rg = (CustomRadioGroup) layout.findViewById(R.id.answer_choices);
 
             // Set views to data from questions
             ((TextView)layout.findViewById(R.id.question)).setText(question.getQuestion());
             ((TextView)layout.findViewById(R.id.question_index)).setText((i+1) + " of " + mQuestions.size());
 
-            RadioButton[] buttons = { (RadioButton)layout.findViewById(R.id.answer_A),
-                    (RadioButton)layout.findViewById(R.id.answer_B),
-                    (RadioButton)layout.findViewById(R.id.answer_C),
-                    (RadioButton)layout.findViewById(R.id.answer_D),
-                    (RadioButton)layout.findViewById(R.id.answer_E),
-                    (RadioButton)layout.findViewById(R.id.answer_F)};
+            LetterPicker letterPicker = new LetterPicker(); // Used for picking letters for the multiple choices
+
+            // These are the default, existing buttons
+            ArrayList<RadioButton> buttons = new ArrayList<>();
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_A));
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_B));
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_C));
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_D));
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_E));
+//            buttons.add((RadioButton) rg.findViewById(R.id.answer_F));
+
             Answer[] answers = question.getMultiple_choice();
+            int nextId = baseId;
             for (int j = 0; j < answers.length; j++) {
                 Answer answer = answers[j];
                 String id = answer.getId().toLowerCase();
-                switch (id) {
-                    case "a":
-                        buttons[0].setText(answer.getAnswer());
-                        buttons[0].setTag("a");
-                        break;
-                    case "b":
-                        buttons[1].setText(answer.getAnswer());
-                        buttons[1].setTag("b");
-                        break;
-                    case "c":
-                        buttons[2].setText(answer.getAnswer());
-                        buttons[2].setTag("c");
-                        break;
-                    case "d":
-                        buttons[3].setText(answer.getAnswer());
-                        buttons[3].setTag("d");
-                        break;
-                    case "e":
-                        buttons[4].setText(answer.getAnswer());
-                        buttons[4].setTag("e");
-                        break;
-                    case "f":
-                        buttons[5].setText(answer.getAnswer());
-                        buttons[5].setTag("f");
-                        break;
-                    default:
-                        // TODO: Make it so that more choices could appear
-                }
+
+//                if (j <= 5) {
+//                    buttons.get(j).setText(answer.getAnswer());
+//                    buttons.get(j).setTag(letterPicker.getNextLetter());
+//                }
+//                else {
+                    RadioButton newButton = new RadioButton(this);
+                    newButton.setText(answer.getAnswer());
+                    newButton.setTag(letterPicker.getNextLetter());
+                    newButton.setId(nextId);
+                    nextId++;
+                    buttons.add(newButton);
+
+                    // Add to layout
+                    if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        rg.addView(newButton);
+                    }
+                    else if (j % 2 == 0) {
+                        ((LinearLayout) rg.findViewById(R.id.left_choice_container)).addView(newButton);
+                    }
+                    else {
+                        ((LinearLayout) rg.findViewById(R.id.right_choice_container)).addView(newButton);
+                    }
+//                }
+            }
+            baseId += answers.length;
+
+            rg.setTag(i); // Set tag to question index for later use
+
+            // If using landscape layout, we need to add the radiobuttons manually
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                rg.addViews(buttons);
             }
 
-            // Mark answers as selected if there was an orientation change, etc.
-//            if (selectedQuestions != null) {
-//                if (selectedQuestions[i] != -1)
-//                    buttons[selectedQuestions[i]].setChecked(true);
-//            }
-            RadioGroup rg = (RadioGroup) layout.findViewById(R.id.answer_choices);
-            rg.setTag(i); // Set tag to question index for later use
             rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() { // Keep up with what answer is selected
                 @Override
                 public void onCheckedChanged(RadioGroup group, int checkedId) {
-                    int index = (int)group.getTag();
-                    mResponses[index] = (String)((RadioButton)group.findViewById(group.getCheckedRadioButtonId())).getTag();
-                    mSelectedAnswerIds[index] = group.getCheckedRadioButtonId();
+                    CustomRadioGroup customGroup = (CustomRadioGroup) group;
+                    int index = (int)customGroup.getTag();
+                    RadioButton button = ((RadioButton)customGroup.findViewById(customGroup.getCheckedRadioButtonId()));
+                    mResponses[index] = (String)((RadioButton)customGroup.findViewById(customGroup.getCheckedRadioButtonId())).getTag();
+                    mSelectedAnswerIds[index] = customGroup.getCheckedRadioButtonId();
                 }
             });
-            if (selectedQuestions != null && selectedQuestions[i] != -1)
-                rg.check(selectedQuestions[i]);
-
-            // Make unused choices become invisible
-            for (int j = buttons.length-1; j > answers.length-1; j--) {
-                buttons[j].setVisibility(View.GONE);
-            }
+//            if (selectedQuestions != null && selectedQuestions[i] != -1)
+//                buttons.get(selectedQuestions[i]).toggle();
 
             mViewAnimator.addView(layout, i, layoutParams);
         }
-
-//        Animation leftAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_out_left);
-//        Animation rightAnimation = AnimationUtils.loadAnimation(this, R.anim.slide_in_right);
-//        mViewAnimator.setInAnimation(rightAnimation);
-//        mViewAnimator.setOutAnimation(leftAnimation);
     }
 
     public ArrayList<Question> getQuestionsFromJSON(String jsonText) throws JSONException {
@@ -390,8 +381,58 @@ public class QuizActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-        RadioButton answerA = (RadioButton) findViewById(R.id.answer_A);
-        answerA.setChecked(true);
+    }
+
+    // <---------- Gesture methods -------------->
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        this.mDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        Log.d(TAG, "Fling happened");
+        int sensitivity = 50;
+        if (e1.getX() - e2.getX() > sensitivity) { // swipe left to right
+            Log.d(TAG, "Swiped left to right");
+            if (mViewAnimator.getDisplayedChild() < mViewAnimator.getChildCount()-1)
+                showNextQuestion();
+            return true;
+        }
+        else if (e2.getX() - e1.getX() > sensitivity) { // swipe right to left
+            Log.d(TAG, "Swiped right to left");
+            if (mViewAnimator.getDisplayedChild() > 0)
+                showPrevQuestion();
+            return true;
+        }
+        return false;
     }
 
     // <--------------------------------------------------->
