@@ -1,12 +1,15 @@
 package com.levipayne.quizapp;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -28,6 +31,7 @@ import com.levipayne.quizapp.CustomObjects.CustomRadioGroup;
 import com.levipayne.quizapp.CustomObjects.LetterPicker;
 import com.levipayne.quizapp.QuestionObjects.Answer;
 import com.levipayne.quizapp.QuestionObjects.Question;
+import com.parse.ParseUser;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,6 +80,25 @@ public class QuizActivity extends Activity implements GestureDetector.OnGestureL
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
+
+        ParseUser user = ((QuizApplication)getApplication()).getUser();
+        boolean startCountdown = true;
+        if (user != null && user.isNew() && savedInstanceState == null) {
+            startCountdown = false;
+            Dialog dialog = new Dialog(this);
+            dialog.setTitle("Before you start...");
+            LayoutInflater inflater = LayoutInflater.from(this);
+            LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.starting_dialog, null);
+            dialog.setContentView(layout);
+            dialog.setCancelable(true);
+            dialog.show();
+            dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialog) {
+                    startCountdown(0);
+                }
+            });
+        }
 
         // Instantiate View Objects
         mRootView = (RelativeLayout) findViewById(R.id.main_container);
@@ -152,7 +175,9 @@ public class QuizActivity extends Activity implements GestureDetector.OnGestureL
             mAnswers[i] = mQuestions.get(i).getAnswer();
         }
         mCountDownPaused = false;
-        startCountdown(mTimeElapsed);
+
+        if (startCountdown)
+            startCountdown(mTimeElapsed);
 
         mDetector = new GestureDetectorCompat(this,this);
     }

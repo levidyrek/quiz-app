@@ -10,7 +10,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.parse.FindCallback;
+import com.parse.Parse;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+
 import org.w3c.dom.Text;
+
+import java.util.List;
 
 public class PostQuizActivity extends Activity {
     private final String TAG = getClass().getSimpleName();
@@ -93,8 +101,17 @@ public class PostQuizActivity extends Activity {
             mSharedEditor.putInt("percentage", percentage);
             mSharedEditor.putInt("seconds", seconds);
             mSharedEditor.commit();
+            saveToParse(percentage, seconds);
             return true;
         }
         return false;
+    }
+
+    public void saveToParse(final int percentage, final int seconds) {
+        ParseObject gameScore = new ParseObject("QuizScore");
+        gameScore.put("percentage", percentage);
+        gameScore.put("seconds", seconds);
+        gameScore.put("username", ((QuizApplication)getApplication()).getUser().getUsername());
+        gameScore.saveEventually();
     }
 }

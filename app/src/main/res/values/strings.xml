@@ -4,6 +4,7 @@
     <!-- Start screen strings -->
     <string name="welcome_text">Welcome to Quiz App!\nPress start to begin.</string>
     <string name="start_text">Start</string>
+    <string name="leaderboard_text">Leaderboard</string>
 
     <!-- Quiz strings -->
     <string name="time_left_text">Time Left:</string>
@@ -28,5 +29,24 @@
     <string name="sample_percentage">67%</string>
     <string name="sample_time_taken">in 33 seconds</string>
     <string name="new_high_score">New high score!</string>
+    <string name="title_activity_login">Sign in</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_username">Username</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="action_register">Register</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="login_description">Log in or register to save your high scores to the cloud and appear on the leaderboard.</string>
+    <string name="logout_description">You are currently logged in.</string>
+
+    <!-- Leaderboard Strings -->
+    <string name="header_username">Username</string>
+    <string name="header_percentage">Percentage</string>
+    <string name="header_seconds">Seconds</string>
+
+    <!-- Dialog Strings -->
+    <string name="starting_dialog">You have 60 seconds to answer a set of questions.
+        Swipe left or right or use the buttons at the bottom to navigate through the questions. Tap "Finish" at the end when you are done. Good luck!</string>
 
 </resources>
