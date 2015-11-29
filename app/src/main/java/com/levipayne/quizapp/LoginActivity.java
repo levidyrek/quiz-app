@@ -96,7 +96,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null)
-            loggedIn = getIntent().getExtras().getBoolean("loggedIn");
+            loggedIn = ParseUser.getCurrentUser() != null;
         else
             loggedIn = savedInstanceState.getBoolean("loggedIn");
         if (loggedIn) {
@@ -124,6 +124,8 @@ public class LoginActivity extends AppCompatActivity {
         mPasswordView.setVisibility(View.VISIBLE);
         mSignInButton.setVisibility(View.VISIBLE);
         mSignUpButton.setVisibility(View.VISIBLE);
+
+        mDescription.setText(R.string.login_description);
 
         Toast.makeText(this, "Signed out", Toast.LENGTH_SHORT).show();
     }

@@ -2,14 +2,19 @@ package com.levipayne.quizapp;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.parse.FindCallback;
@@ -75,19 +80,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void goToQuiz(View view) {
-        Intent intent = new Intent(this, QuizActivity.class);
-        startActivity(intent);
+        if (isNetworkAvailable()) {
+            Intent intent = new Intent(this, QuizActivity.class);
+            startActivity(intent);
+        }
     }
 
     public void goToLogin(View v) {
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.putExtra("loggedIn", mLoggedIn);
-        startActivity(intent);
+        if (isNetworkAvailable()) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.putExtra("loggedIn", mLoggedIn);
+            startActivity(intent);
+        }
     }
 
     public void goToLeaderboard(View v) {
-        Intent intent = new Intent(this, LeaderboardActivity.class);
-        startActivity(intent);
+        if (isNetworkAvailable()) {
+            Intent intent = new Intent(this, LeaderboardActivity.class);
+            startActivity(intent);
+        }
     }
 
     public void checkForExistingUser() {
@@ -101,5 +112,17 @@ public class MainActivity extends AppCompatActivity {
             mLoggedIn = false;
             Log.d("Parse", "No existing user found");
         }
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        boolean available = activeNetworkInfo != null && activeNetworkInfo.isConnected();
+
+        if (!available) {
+            Toast.makeText(this, "No internet connection. Please connect to use this feature.", Toast.LENGTH_LONG).show();
+        }
+        return available;
     }
 }

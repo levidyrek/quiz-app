@@ -1,14 +1,18 @@
 package com.levipayne.quizapp;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.parse.FindCallback;
 import com.parse.Parse;
@@ -88,9 +92,11 @@ public class PostQuizActivity extends Activity {
     }
 
     public void tryQuizAgain(View view) {
-        Intent intent = new Intent(this, QuizActivity.class);
-        startActivity(intent);
-        finish();
+        if (isNetworkAvailable()) {
+            Intent intent = new Intent(this, QuizActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 
     public boolean saveScoreIfBest(int percentage, int seconds) {
@@ -101,7 +107,8 @@ public class PostQuizActivity extends Activity {
             mSharedEditor.putInt("percentage", percentage);
             mSharedEditor.putInt("seconds", seconds);
             mSharedEditor.commit();
-            saveToParse(percentage, seconds);
+            if (((QuizApplication)getApplication()).getUser() != null)
+                saveToParse(percentage, seconds);
             return true;
         }
         return false;
@@ -113,5 +120,17 @@ public class PostQuizActivity extends Activity {
         gameScore.put("seconds", seconds);
         gameScore.put("username", ((QuizApplication)getApplication()).getUser().getUsername());
         gameScore.saveEventually();
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        boolean available = activeNetworkInfo != null && activeNetworkInfo.isConnected();
+
+        if (!available) {
+            Toast.makeText(this, "No internet connection. Please connect to use this feature.", Toast.LENGTH_LONG).show();
+        }
+        return available;
     }
 }

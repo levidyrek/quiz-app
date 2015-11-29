@@ -5,11 +5,13 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Bundle;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -82,8 +84,11 @@ public class QuizActivity extends Activity implements GestureDetector.OnGestureL
         setContentView(R.layout.activity_quiz);
 
         ParseUser user = ((QuizApplication)getApplication()).getUser();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        int storedPercentage = prefs.getInt("percentage", -1);
+        int storedSeconds = prefs.getInt("seconds", -1);
         boolean startCountdown = true;
-        if (user != null && user.isNew() && savedInstanceState == null) {
+        if ((storedPercentage == -1 || storedSeconds == -1) || (user != null && user.isNew() && savedInstanceState == null)) {
             startCountdown = false;
             Dialog dialog = new Dialog(this);
             dialog.setTitle("Before you start...");
@@ -392,8 +397,10 @@ public class QuizActivity extends Activity implements GestureDetector.OnGestureL
     @Override
     public void onPause() {
         super.onPause();
-        mCountDownTimer.cancel();
-        mCountDownPaused = true;
+        if (mCountDownTimer != null) {
+            mCountDownTimer.cancel();
+            mCountDownPaused = true;
+        }
     }
 
     @Override

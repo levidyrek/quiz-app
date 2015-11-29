@@ -30,55 +30,62 @@
             android:textColor="#000000"
             android:layout_below="@+id/progress_bar"
             android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_alignParentEnd="true"
+            android:layout_marginBottom="10dp" />
 
-    <com.levipayne.quizapp.CustomObjects.CustomRadioGroup
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/answer_choices" >
+        android:id="@+id/scrollView3" >
 
-        <RadioButton
-            android:layout_width="wrap_content"
+        <com.levipayne.quizapp.CustomObjects.CustomRadioGroup
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/sample_answer_A"
-            android:id="@+id/answer_A"
-            android:visibility="gone" />
+            android:id="@+id/answer_choices" >
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sample_answer_B"
-            android:id="@+id/answer_B"
-            android:visibility="gone" />
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_answer_A"
+                android:id="@+id/answer_A"
+                android:visibility="gone" />
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sample_answer_C"
-            android:id="@+id/answer_C"
-            android:visibility="gone" />
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_answer_B"
+                android:id="@+id/answer_B"
+                android:visibility="gone" />
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sample_answer_D"
-            android:id="@+id/answer_D"
-            android:visibility="gone" />
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_answer_C"
+                android:id="@+id/answer_C"
+                android:visibility="gone" />
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="New RadioButton"
-            android:id="@+id/answer_E"
-            android:visibility="gone" />
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_answer_D"
+                android:id="@+id/answer_D"
+                android:visibility="gone" />
 
-        <RadioButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="New RadioButton"
-            android:id="@+id/answer_F"
-            android:visibility="gone" />
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New RadioButton"
+                android:id="@+id/answer_E"
+                android:visibility="gone" />
 
-    </com.levipayne.quizapp.CustomObjects.CustomRadioGroup>
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New RadioButton"
+                android:id="@+id/answer_F"
+                android:visibility="gone" />
+
+        </com.levipayne.quizapp.CustomObjects.CustomRadioGroup>
+    </ScrollView>
 
 </LinearLayout>
